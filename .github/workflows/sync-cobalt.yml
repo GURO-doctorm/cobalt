@@ -1,0 +1,38 @@
+name: Auto Sync Cobalt Upstream
+
+on:
+  schedule:
+    - cron: '0 5 * * *'   
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+
+      - name: Add upstream
+        run: git remote add upstream https://github.com/imputnet/cobalt.git || true
+
+      - name: Fetch upstream
+        run: git fetch upstream
+
+      - name: Merge upstream changes
+        run: |
+          git checkout main
+          git merge upstream/main --no-edit --no-ff || echo "Merge conflict - needs manual fix"
+          git push origin main
+
+      - name: Log result
+        run: echo "Sync completed - latest commit: $(git log -1 --pretty=%B)"
